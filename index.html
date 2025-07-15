@@ -6,32 +6,32 @@
     <title>インタラクティブ動物豆知識クイズ</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Noto Sans JP', sans-serif;
-            background-color: #f5f5f4; /* stone-100 */
-        }
-        .quiz-card {
-            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-        }
-        .option-btn.correct {
-            background-color: #22c55e; /* green-500 */
-            color: white;
-            border-color: #16a34a; /* green-600 */
-        }
-        .option-btn.incorrect {
-            background-color: #ef4444; /* red-500 */
-            color: white;
-            border-color: #dc2626; /* red-600 */
-        }
-        .option-btn.reveal-correct {
-            outline: 2px solid #22c55e; /* green-500 */
-            outline-offset: 2px;
-        }
-        .hidden {
-            display: none;
-        }
-    </style>
+<style>
+    body {
+        font-family: 'Noto Sans JP', sans-serif;
+        background-color: #f5f5f4; /* stone-100 */
+    }
+    .quiz-card {
+        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+    }
+    .option-btn.correct {
+        background-color: #22c55e; /* green-500 */
+        color: white;
+        border-color: #16a34a; /* green-600 */
+    }
+    .option-btn.incorrect {
+        background-color: #ef4444; /* red-500 */
+        color: white;
+        border-color: #dc2626; /* red-600 */
+    }
+    .option-btn.reveal-correct {
+        outline: 2px solid #22c55e; /* green-500 */
+        outline-offset: 2px;
+    }
+    .hidden {
+        display: none;
+    }
+</style>
 </head>
 <body class="bg-stone-100 flex items-center justify-center min-h-screen p-4">
 
@@ -71,7 +71,156 @@
     </div>
 
     <script>
-        // JavaScript code goes here
+<script>
+    const quizData = [
+        {
+            question: "キリンの睡眠時間は、1日に平均何分くらいでしょう？",
+            options: ["約30分", "約2時間", "約6時間"],
+            correct: 0,
+            explanation: "キリンは非常に短い睡眠時間で過ごします。外敵から身を守るため、眠りが浅いと言われています。"
+        },
+        {
+            question: "コアラが食べる唯一の葉っぱは何でしょう？",
+            options: ["竹の葉", "ユーカリの葉", "笹の葉"],
+            correct: 1,
+            explanation: "コアラはユーカリの葉しか食べません。ユーカリには毒素が含まれていますが、コアラはそれを分解できる特別な腸を持っています。"
+        },
+        {
+            question: "ペンギンは鳥ですが、なぜ飛べないのでしょう？",
+            options: ["羽が小さすぎるから", "骨が重すぎるから", "泳ぐことに特化しているから"],
+            correct: 2,
+            explanation: "ペンギンの羽は、空を飛ぶためではなく、水中を効率よく泳ぐためのヒレのように進化しました。"
+        },
+        {
+            question: "カメレオンの舌の長さは、自分の体の何倍くらいあるでしょう？",
+            options: ["約0.5倍", "約1倍", "約1.5倍から2倍"],
+            correct: 2,
+            explanation: "カメレオンの舌は非常に長く、筋肉の力で高速で伸ばして獲物を捕らえるのに役立ちます。"
+        },
+        {
+            question: "ハチドリは、1秒間に何回羽ばたくことができるでしょう？",
+            options: ["約10回", "約30回", "約50回から80回"],
+            correct: 2,
+            explanation: "ハチドリは空中で静止（ホバリング）するために、非常に速く羽ばたくことができます。その回数は種類によって異なります。"
+        }
+    ];
+
+    const questionView = document.getElementById('question-view');
+    const resultsView = document.getElementById('results-view');
+    const quizCard = document.getElementById('quiz-card');
+    const questionCounter = document.getElementById('question-counter');
+    const questionText = document.getElementById('question-text');
+    const optionsContainer = document.getElementById('options-container');
+    const feedbackContainer = document.getElementById('feedback-container');
+    const explanationText = document.getElementById('explanation-text');
+    const nextBtn = document.getElementById('next-btn');
+    const scoreText = document.getElementById('score-text');
+    const resultMessage = document.getElementById('result-message');
+    const restartBtn = document.getElementById('restart-btn');
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    function loadQuestion() {
+        answered = false;
+        const currentQuestion = quizData[currentQuestionIndex];
+        
+        quizCard.style.opacity = 0;
+        quizCard.style.transform = 'translateY(20px)';
+
+        setTimeout(() => {
+            questionCounter.textContent = `第${currentQuestionIndex + 1}問 / ${quizData.length}問`;
+            questionText.textContent = currentQuestion.question;
+            optionsContainer.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.dataset.index = index;
+                button.className = 'option-btn w-full text-left p-4 rounded-lg border-2 border-stone-200 hover:bg-stone-100 hover:border-sky-400 transition-all duration-200';
+                button.onclick = handleOptionClick;
+                optionsContainer.appendChild(button);
+            });
+            feedbackContainer.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+            
+            quizCard.style.opacity = 1;
+            quizCard.style.transform = 'translateY(0)';
+        }, 300);
+    }
+
+    function handleOptionClick(event) {
+        if (answered) return;
+        answered = true;
+
+        const selectedButton = event.target;
+        const selectedIndex = parseInt(selectedButton.dataset.index);
+        const correctIndex = quizData[currentQuestionIndex].correct;
+
+        if (selectedIndex === correctIndex) {
+            score++;
+            selectedButton.classList.add('correct');
+        } else {
+            selectedButton.classList.add('incorrect');
+            const correctButton = optionsContainer.querySelector(`[data-index='${correctIndex}']`);
+            correctButton.classList.add('reveal-correct');
+        }
+
+        Array.from(optionsContainer.children).forEach(btn => {
+            btn.disabled = true;
+            btn.style.cursor = 'not-allowed';
+        });
+        
+        explanationText.textContent = quizData[currentQuestionIndex].explanation;
+        feedbackContainer.classList.remove('hidden');
+        
+        if (currentQuestionIndex < quizData.length - 1) {
+            nextBtn.textContent = '次の問題へ';
+            nextBtn.classList.remove('hidden');
+        } else {
+            nextBtn.textContent = '結果を見る';
+            nextBtn.classList.remove('hidden');
+        }
+    }
+    
+    function showResults() {
+        questionView.classList.add('hidden');
+        resultsView.classList.remove('hidden');
+        scoreText.textContent = `${score} / ${quizData.length} 正解！`;
+        
+        let message = '';
+        const percentage = (score / quizData.length) * 100;
+        if (percentage === 100) {
+            message = '素晴らしい！全問正解です！動物博士ですね！';
+        } else if (percentage >= 60) {
+            message = 'おしい！あと少しで全問正解でした！';
+        } else if (percentage >= 20) {
+            message = 'よく頑張りました！新しい発見はありましたか？';
+        } else {
+            message = 'また挑戦してみてくださいね！';
+        }
+        resultMessage.textContent = message;
+    }
+
+    nextBtn.addEventListener('click', () => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < quizData.length) {
+            loadQuestion();
+        } else {
+            showResults();
+        }
+    });
+
+    restartBtn.addEventListener('click', () => {
+        currentQuestionIndex = 0;
+        score = 0;
+        resultsView.classList.add('hidden');
+        questionView.classList.remove('hidden');
+        loadQuestion();
+    });
+
+    loadQuestion();
+</script>    
     </script>
 </body>
 </html>
